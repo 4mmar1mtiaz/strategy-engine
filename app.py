@@ -14,10 +14,79 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from engine import RULE_NAMES, RULE_PARAM_TYPES, PERIODS, engine_loop
 
 st.set_page_config(
-    page_title="Strategy Engine",
+    page_title="StrategyEngine — Free Algorithmic Forex Trading Strategy Builder & Backtester",
     page_icon="📈",
     layout="wide",
+    initial_sidebar_state="expanded",
 )
+
+# ── SEO: meta tags + schema.org JSON-LD ──────────────────────────────────────
+st.markdown("""
+<head>
+<meta name="description" content="Free algorithmic forex trading strategy builder and backtester. Build, test, and validate rule-based trading strategies using genetic algorithms and Monte Carlo simulation. Based on University of Sydney research." />
+<meta name="keywords" content="algorithmic trading, forex strategy builder, backtesting, rule-based trading system, genetic algorithm trading, Monte Carlo simulation trading, quantitative trading, trading strategy tester, free backtester, forex trading tools" />
+<meta name="author" content="StrategyEngine" />
+<meta name="robots" content="index, follow" />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="StrategyEngine — Free Algorithmic Forex Trading Strategy Builder" />
+<meta property="og:description" content="Build and stress-test rule-based forex trading strategies. 16 technical indicators, genetic algorithm optimisation, Monte Carlo validation. Built on University of Sydney research." />
+<meta property="og:image" content="https://raw.githubusercontent.com/4mmar1mtiaz/strategy-engine/master/preview.png" />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="StrategyEngine — Free Algorithmic Forex Trading Strategy Builder" />
+<meta name="twitter:description" content="Build and stress-test rule-based forex trading strategies with 16 indicators, GA optimisation, and Monte Carlo validation." />
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "StrategyEngine",
+  "applicationCategory": "FinanceApplication",
+  "operatingSystem": "Web",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "description": "Free algorithmic forex trading strategy builder and backtester using rule-based indicators, genetic algorithm optimisation, and Monte Carlo simulation. Built on University of Sydney research.",
+  "featureList": [
+    "16 technical indicator rules including MA, EMA, RSI, CCI, Bollinger Bands, Ichimoku",
+    "Genetic algorithm strategy optimisation",
+    "Monte Carlo stress testing",
+    "Walk-forward backtesting",
+    "CSV data upload for any forex pair or timeframe"
+  ],
+  "isBasedOn": {
+    "@type": "ScholarlyArticle",
+    "author": { "@type": "Organization", "name": "University of Sydney" },
+    "description": "Rule-based forex trading system research — Master of Data Science capstone project"
+  }
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is StrategyEngine?",
+      "acceptedAnswer": { "@type": "Answer", "text": "StrategyEngine is a free tool for building and backtesting rule-based algorithmic forex trading strategies. It uses genetic algorithms to optimise indicator weights and Monte Carlo simulation to validate robustness." }
+    },
+    {
+      "@type": "Question",
+      "name": "What research is this based on?",
+      "acceptedAnswer": { "@type": "Answer", "text": "StrategyEngine is built on a University of Sydney Master of Data Science capstone research project on autonomous rule-based forex trading systems, supervised by Dr. Matloob Khushi." }
+    },
+    {
+      "@type": "Question",
+      "name": "Is StrategyEngine free?",
+      "acceptedAnswer": { "@type": "Answer", "text": "Yes, completely free. Upload your own OHLC data, select indicators, configure the engine, and let it run." }
+    },
+    {
+      "@type": "Question",
+      "name": "What technical indicators does it support?",
+      "acceptedAnswer": { "@type": "Answer", "text": "16 indicators: Moving Average crossovers, EMA, DEMA, TEMA, Stochastic, Vortex, Ichimoku Cloud, RSI, CCI, Keltner Channel, Donchian Channel, and Bollinger Bands." }
+    }
+  ]
+}
+</script>
+</head>
+""", unsafe_allow_html=True)
 
 # ---------- session state init ----------
 if 'engine_state' not in st.session_state:
@@ -354,6 +423,141 @@ if stop_btn:
         st.session_state.stop_event.set()
     st.session_state.running = False
     st.rerun()
+
+# ---------- landing page ----------
+st.markdown("""
+<style>
+.hero {
+    background: linear-gradient(135deg, #0f1117 0%, #1a1f2e 50%, #0d1b2a 100%);
+    border: 1px solid #2d3748;
+    border-radius: 12px;
+    padding: 48px 40px 40px 40px;
+    margin-bottom: 8px;
+}
+.hero h1 {
+    font-size: 2.6rem;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: #ffffff;
+    line-height: 1.2;
+}
+.hero h1 span { color: #00d4aa; }
+.hero p.sub {
+    font-size: 1.15rem;
+    color: #a0aec0;
+    max-width: 680px;
+    margin: 0 0 28px 0;
+    line-height: 1.6;
+}
+.uni-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 212, 170, 0.1);
+    border: 1px solid rgba(0, 212, 170, 0.3);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.82rem;
+    color: #00d4aa;
+    margin-bottom: 28px;
+    font-weight: 500;
+}
+.feature-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+}
+.pill {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 0.82rem;
+    color: #cbd5e0;
+}
+.stats-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 32px;
+    padding-top: 28px;
+    border-top: 1px solid rgba(255,255,255,0.08);
+}
+.stat { display: flex; flex-direction: column; }
+.stat-num { font-size: 1.7rem; font-weight: 700; color: #fff; }
+.stat-label { font-size: 0.78rem; color: #718096; margin-top: 2px; }
+</style>
+
+<div class="hero">
+  <div class="uni-badge">
+    🎓 Built on University of Sydney research &nbsp;·&nbsp; Master of Data Science
+  </div>
+  <h1>Build &amp; stress-test <span>trading strategies</span><br/>that actually hold up</h1>
+  <p class="sub">
+    StrategyEngine is a free algorithmic trading lab. Upload your forex OHLC data,
+    pick your indicators, and let the engine search for rule-based strategies —
+    optimised by a genetic algorithm, validated by Monte Carlo simulation.
+  </p>
+  <div class="feature-pills">
+    <span class="pill">16 technical indicators</span>
+    <span class="pill">Genetic algorithm optimisation</span>
+    <span class="pill">Monte Carlo stress testing</span>
+    <span class="pill">Walk-forward backtesting</span>
+    <span class="pill">Auto or manual parameters</span>
+    <span class="pill">Runs until you stop it</span>
+  </div>
+  <div class="stats-row">
+    <div class="stat">
+      <span class="stat-num">16</span>
+      <span class="stat-label">Indicator rules</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">4</span>
+      <span class="stat-label">MC validation types</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Strategy iterations</span>
+    </div>
+    <div class="stat">
+      <span class="stat-num">Free</span>
+      <span class="stat-label">Always</span>
+    </div>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<style>
+.how-strip {
+    display: flex;
+    gap: 0;
+    background: #1a1f2e;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+.how-step {
+    flex: 1;
+    padding: 18px 20px;
+    border-right: 1px solid #2d3748;
+    font-size: 0.83rem;
+    color: #a0aec0;
+    line-height: 1.5;
+}
+.how-step:last-child { border-right: none; }
+.how-step strong { display: block; color: #e2e8f0; font-size: 0.88rem; margin-bottom: 4px; }
+.step-num { color: #00d4aa; font-weight: 700; font-size: 0.75rem; margin-bottom: 6px; display: block; }
+</style>
+<div class="how-strip">
+  <div class="how-step"><span class="step-num">STEP 1</span><strong>Upload data</strong>Any OHLC CSV — any pair, any timeframe</div>
+  <div class="how-step"><span class="step-num">STEP 2</span><strong>Pick indicators</strong>Choose from 16 technical rules in the sidebar</div>
+  <div class="how-step"><span class="step-num">STEP 3</span><strong>Set your bar</strong>Define what return, Sharpe &amp; drawdown qualifies as a winner</div>
+  <div class="how-step"><span class="step-num">STEP 4</span><strong>Press Start</strong>Engine trains, runs GA, stress-tests with Monte Carlo</div>
+  <div class="how-step"><span class="step-num">STEP 5</span><strong>Collect winners</strong>Strategies that pass everything get saved to the Winners tab</div>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------- main area ----------
 state = st.session_state.engine_state

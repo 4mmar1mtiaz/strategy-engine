@@ -1,0 +1,41 @@
+# StrategyEngine
+> Free algorithmic forex trading strategy builder and backtester. Upload OHLC data, select technical indicators, optimise strategies with a genetic algorithm, and validate with Monte Carlo simulation.
+
+## About
+StrategyEngine is built on University of Sydney Master of Data Science research into autonomous rule-based forex trading systems, supervised by Dr. Matloob Khushi. It is free and open source.
+
+## What it does
+- Accepts any OHLC CSV (any forex pair, any timeframe)
+- Brute-force trains 16 technical indicator parameters on training data
+- Uses a genetic algorithm (GAMSSR fitness function) to find optimal rule weight combinations
+- Validates strategies with Monte Carlo simulation (price noise, bootstrap, time shuffle, parameter perturbation)
+- Saves winning strategies that meet user-defined return, Sharpe ratio, drawdown, and MC pass rate thresholds
+- Runs continuously until stopped, accumulating winners
+
+## Technical indicators supported
+1. Simple Moving Average crossover (MA x MA)
+2. Exponential MA x Simple MA crossover
+3. EMA x EMA crossover
+4. Double EMA (DEMA) x MA crossover
+5. DEMA x DEMA crossover
+6. Triple EMA (TEMA) x MA crossover
+7. Stochastic Oscillator x Stochastic Signal Line
+8. Vortex Indicator positive x negative
+9. Ichimoku Cloud (Span A x Span B)
+10. RSI x single threshold
+11. CCI x single threshold
+12. RSI dual band (overbought/oversold)
+13. CCI dual band (overbought/oversold)
+14. Keltner Channel breakout
+15. Donchian Channel breakout
+16. Bollinger Bands breakout
+
+## Research foundation
+Based on: Rule-based forex trading system — University of Sydney, Master of Data Science capstone project. The system uses 16 crossover-based trading rules combined via genetic algorithm weight optimisation using the GAMSSR (Genetic Algorithm Maximum Sharpe-Sortino Ratio) fitness function.
+
+## Pages
+- App: https://github.com/4mmar1mtiaz/strategy-engine
+- Source code: https://github.com/4mmar1mtiaz/strategy-engine
+
+## Stack
+Python, Streamlit, NumPy, Pandas, Matplotlib
