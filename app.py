@@ -649,17 +649,8 @@ with tab_live:
 with tab_winners:
     winners = state.get('winners', [])
 
-    # Load from saved CSV for testing / previewing without running the engine
-    winners_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'winners.csv')
-    if not winners and os.path.exists(winners_csv_path):
-        if st.button("Load saved winners from disk", help="Loads winners.csv so you can preview this tab without running the engine."):
-            saved = pd.read_csv(winners_csv_path).to_dict('records')
-            state['winners'] = saved
-            winners = saved
-            st.rerun()
-
     if not winners:
-        st.info("No winners yet. Press 'Load saved winners from disk' above to preview, or run the engine to find new ones.")
+        st.info("No winners yet. Run the engine — strategies that pass all your criteria will appear here.")
     else:
         df_w = pd.DataFrame(winners)
         display_cols = ['timestamp', 'iteration', 'return_pct', 'max_drawdown_pct',
