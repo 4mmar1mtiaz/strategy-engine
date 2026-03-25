@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+temp_3rules_run_*.ipynb
+
+# OS
+.DS_Store
+
+# Large output files
+rule_combinations_results.csv
