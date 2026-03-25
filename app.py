@@ -642,8 +642,18 @@ with tab_live:
 # --- Winners tab ---
 with tab_winners:
     winners = state.get('winners', [])
+
+    # Load from saved CSV for testing / previewing without running the engine
+    winners_csv_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'winners.csv')
+    if not winners and os.path.exists(winners_csv_path):
+        if st.button("Load saved winners from disk", help="Loads winners.csv so you can preview this tab without running the engine."):
+            saved = pd.read_csv(winners_csv_path).to_dict('records')
+            state['winners'] = saved
+            winners = saved
+            st.rerun()
+
     if not winners:
-        st.info("No winners yet. The engine needs to find strategies that pass both the pre-MC filter and Monte Carlo validation.")
+        st.info("No winners yet. Press 'Load saved winners from disk' above to preview, or run the engine to find new ones.")
     else:
         df_w = pd.DataFrame(winners)
         display_cols = ['timestamp', 'iteration', 'return_pct', 'max_drawdown_pct',
@@ -662,23 +672,79 @@ with tab_winners:
             hide_index=True,
         )
 
+        # ── Bulk download ────────────────────────────────────────────
         csv_bytes = df_w.to_csv(index=False).encode()
         st.download_button(
-            "Download winners CSV",
+            "Download all winners (CSV)",
             csv_bytes,
             file_name="winners_export.csv",
             mime="text/csv",
+            help="Full table with all metrics and raw weights.",
         )
 
-        st.subheader("Best winner")
-        best = df_w.loc[df_w['return_pct'].idxmax()]
-        b1, b2, b3, b4 = st.columns(4)
-        b1.metric("Return %", f"{best['return_pct']:.2f}%")
-        b2.metric("Max DD %", f"{best['max_drawdown_pct']:.3f}%")
-        b3.metric("Sharpe", f"{best['sharpe_ratio']:.2f}")
-        b4.metric("MC Pass %", f"{best['mc_pass_rate']:.1f}%")
-        if 'rules_used' in best:
-            st.caption(f"Rules used: {best['rules_used']}")
+        st.divider()
+
+        # ── Per-strategy download ────────────────────────────────────
+        st.subheader("Download individual strategy config")
+        st.caption("Pick a winner and download its full parameters as a JSON file you can plug into any script or notebook.")
+
+        winner_labels = [
+            f"#{i+1}  |  {w.get('timestamp','')[:16]}  |  Return: {w.get('return_pct','?')}%  |  Sharpe: {w.get('sharpe_ratio','?')}  |  MC: {w.get('mc_pass_rate','?')}%"
+            for i, w in enumerate(winners)
+        ]
+        selected_idx = st.selectbox("Select winner", range(len(winner_labels)),
+                                     format_func=lambda i: winner_labels[i],
+                                     help="Choose a strategy to inspect or download.")
+
+        selected_winner = winners[selected_idx]
+
+        sc1, sc2, sc3, sc4 = st.columns(4)
+        sc1.metric("Return %",   f"{selected_winner.get('return_pct', '—')}%")
+        sc2.metric("Max DD %",   f"{selected_winner.get('max_drawdown_pct', '—')}%")
+        sc3.metric("Sharpe",     f"{selected_winner.get('sharpe_ratio', '—')}")
+        sc4.metric("MC Pass %",  f"{selected_winner.get('mc_pass_rate', '—')}%")
+
+        if 'rules_used' in selected_winner:
+            st.caption(f"Rules: {selected_winner['rules_used']}")
+
+        # Build clean JSON config for download
+        import json
+        strategy_config = {
+            "metadata": {
+                "timestamp":       selected_winner.get("timestamp", ""),
+                "strategy_hash":   selected_winner.get("strategy_hash", ""),
+                "return_pct":      selected_winner.get("return_pct"),
+                "max_drawdown_pct":selected_winner.get("max_drawdown_pct"),
+                "sharpe_ratio":    selected_winner.get("sharpe_ratio"),
+                "mc_pass_rate":    selected_winner.get("mc_pass_rate"),
+                "rules_used":      selected_winner.get("rules_used", ""),
+            },
+            "rule_params": selected_winner.get("all_rules", ""),
+            "weights":     selected_winner.get("all_weights", ""),
+            "usage": {
+                "note": "Pass rule_params and weights into getTradingRuleFeatures() and evaluate() from tradingrule.py / engine.py",
+                "example": (
+                    "import ast, numpy as np\n"
+                    "from tradingrule import getTradingRuleFeatures\n"
+                    "rule_params = ast.literal_eval(config['rule_params'])\n"
+                    "weights = np.array(ast.literal_eval(config['weights']))\n"
+                    "features = getTradingRuleFeatures(your_df, rule_params)\n"
+                    "position = (features.values[:, 1:] @ weights).flatten()"
+                ),
+            },
+        }
+
+        json_bytes = json.dumps(strategy_config, indent=2).encode()
+        st.download_button(
+            "Download strategy config (JSON)",
+            json_bytes,
+            file_name=f"strategy_{selected_winner.get('strategy_hash', selected_idx)}.json",
+            mime="application/json",
+            help="Contains rule params, weights, and a usage snippet for plugging into your own scripts.",
+        )
+
+        with st.expander("Preview config"):
+            st.json(strategy_config)
 
 # --- Rule params tab ---
 with tab_rules:
