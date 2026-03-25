@@ -16,6 +16,9 @@ temp_3rules_run_*.ipynb
 # OS
 .DS_Store
 
+# Secrets — never commit
+.streamlit/secrets.toml
+
 # Output files — user-specific, not shared
 rule_combinations_results.csv
 winners.csv
