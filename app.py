@@ -12,6 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from engine import RULE_NAMES, RULE_PARAM_TYPES, PERIODS, engine_loop
+from storage import save_winner, load_winners, delete_winners
 
 st.set_page_config(
     page_title="StrategyEngine — Free Algorithmic Forex Trading Strategy Builder & Backtester",
@@ -111,6 +112,23 @@ if 'stop_event' not in st.session_state:
 
 if 'thread' not in st.session_state:
     st.session_state.thread = None
+
+# ---------- user identity (URL-based, no login) ----------
+import uuid
+
+params = st.query_params
+if 'uid' not in params:
+    new_uid = uuid.uuid4().hex[:10]
+    st.query_params['uid'] = new_uid
+
+user_id = st.query_params['uid']
+
+# Load this user's saved winners into session state on first load
+if 'winners_loaded' not in st.session_state:
+    saved = load_winners(user_id)
+    if saved:
+        st.session_state.engine_state['winners'] = saved
+    st.session_state.winners_loaded = True
 
 # Rule descriptions shown as tooltips
 RULE_DESCRIPTIONS = [
@@ -352,6 +370,20 @@ with st.sidebar:
     )
 
     st.divider()
+    st.subheader("Your save code")
+    st.code(user_id, language=None)
+    st.caption(
+        "Bookmark your URL or copy this code — your winners are always saved against it. "
+        "Anyone with your code can see your strategies, so keep it private."
+    )
+    if st.button("Clear all my saved winners", type="secondary",
+                 help="Permanently deletes all winners saved under your code."):
+        delete_winners(user_id)
+        st.session_state.engine_state['winners'] = []
+        st.session_state.winners_loaded = False
+        st.rerun()
+
+    st.divider()
     col_start, col_stop = st.columns(2)
     start_btn = col_start.button(
         "Start",
@@ -391,6 +423,7 @@ if start_btn:
             'winner_min_sharpe': float(winner_min_sharpe),
             'winner_max_dd': float(winner_max_dd),
             'manual_params': manual_params if not auto_train else None,
+            'user_id': user_id,
         }
 
         stop_event = threading.Event()

@@ -346,19 +346,12 @@ def engine_loop(config, state, stop_event):
                         f'Return: {ret:.1f}%  MC: {mc_rate:.1f}%'
                     )
 
-                    # Save locally only if running on a local machine (not cloud)
-                    is_local = not os.environ.get('STREAMLIT_SHARING_MODE') and \
-                               not os.environ.get('IS_STREAMLIT_CLOUD')
-                    if is_local:
-                        winners_path = os.path.join(
-                            os.path.dirname(os.path.abspath(__file__)), 'winners.csv'
-                        )
-                        pd.DataFrame([winner]).to_csv(
-                            winners_path,
-                            mode='a',
-                            header=not os.path.exists(winners_path),
-                            index=False,
-                        )
+                    # Persist to database keyed by user_id
+                    try:
+                        from storage import save_winner as db_save
+                        db_save(config.get('user_id', 'local'), winner)
+                    except Exception:
+                        pass
 
         except Exception as e:
             state['status'] = f'Iteration {iteration} — Error: {e}'

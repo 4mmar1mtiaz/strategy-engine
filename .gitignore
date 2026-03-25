@@ -19,3 +19,4 @@ temp_3rules_run_*.ipynb
 # Output files — user-specific, not shared
 rule_combinations_results.csv
 winners.csv
+userdata.db
