@@ -522,40 +522,55 @@ st.markdown("""
 </style>
 
 <div class="hero">
-  <div class="uni-badge">
-    🎓 Built on University of Sydney research &nbsp;·&nbsp; Master of Data Science
-  </div>
-  <h1>Build &amp; stress-test <span>trading strategies</span><br/>that actually hold up</h1>
+  <h1>Your trading data goes in.<br/><span>Winning strategies come out.</span></h1>
   <p class="sub">
-    StrategyEngine is a free algorithmic trading lab. Upload your forex OHLC data,
-    pick your indicators, and let the engine search for rule-based strategies —
-    optimised by a genetic algorithm, validated by Monte Carlo simulation.
+    Upload a spreadsheet of price data for any currency pair. The engine automatically
+    figures out the best settings for 16 popular trading indicators — things like moving averages,
+    RSI, and Bollinger Bands — then mixes and matches them to find combinations that would have
+    made money on your data. Every strategy that looks promising gets stress-tested under hundreds
+    of simulated market conditions before it's declared a winner. No coding required.
   </p>
+
   <div class="feature-pills">
-    <span class="pill">16 technical indicators</span>
-    <span class="pill">Genetic algorithm optimisation</span>
-    <span class="pill">Monte Carlo stress testing</span>
-    <span class="pill">Walk-forward backtesting</span>
-    <span class="pill">Auto or manual parameters</span>
-    <span class="pill">Runs until you stop it</span>
+    <span class="pill">Step 1 — Upload your price data (CSV)</span>
+    <span class="pill">Step 2 — Pick which indicators to use</span>
+    <span class="pill">Step 3 — Hit Start and let it run</span>
+    <span class="pill">Step 4 — Download your winning strategies</span>
   </div>
+
   <div class="stats-row">
     <div class="stat">
       <span class="stat-num">16</span>
       <span class="stat-label">Indicator rules</span>
     </div>
     <div class="stat">
-      <span class="stat-num">4</span>
-      <span class="stat-label">MC validation types</span>
+      <span class="stat-num">∞</span>
+      <span class="stat-label">Strategy combinations</span>
     </div>
     <div class="stat">
-      <span class="stat-num">∞</span>
-      <span class="stat-label">Strategy iterations</span>
+      <span class="stat-num">100s</span>
+      <span class="stat-label">Stress-test simulations per strategy</span>
     </div>
     <div class="stat">
       <span class="stat-num">Free</span>
       <span class="stat-label">Always</span>
     </div>
+  </div>
+
+  <div style="margin-top:32px; padding-top:24px; border-top:1px solid rgba(255,255,255,0.08);">
+    <div class="uni-badge" style="margin-bottom:14px;">
+      🎓 Built on University of Sydney research &nbsp;·&nbsp; Master of Data Science capstone project
+    </div>
+    <p style="font-size:0.85rem; color:#718096; max-width:700px; line-height:1.7; margin:0 0 14px 0;">
+      This tool is built on top of a research project from the University of Sydney's Master of Data Science programme.
+      We've extended it with a full UI, automatic parameter training, and Monte Carlo stress testing to make it accessible
+      to everyone — not just researchers. It is a <strong style="color:#a0aec0">free educational resource</strong>.
+    </p>
+    <p style="font-size:0.82rem; color:#4a5568; max-width:700px; line-height:1.7; margin:0;">
+      <strong style="color:#4a5568">Disclaimer:</strong> Markets are unpredictable and past performance never guarantees future results.
+      A strategy that worked on historical data can fail tomorrow — that's just how markets work. This tool is for
+      learning and research only. It is <strong style="color:#4a5568">not financial advice</strong>. Never risk money you can't afford to lose.
+    </p>
   </div>
 </div>
 """, unsafe_allow_html=True)
