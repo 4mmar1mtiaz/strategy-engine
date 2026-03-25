@@ -636,7 +636,13 @@ with tab_live:
     winners = state.get('winners', [])
     if len(winners) > 1:
         st.subheader("Return % — winners over time")
-        chart_data = pd.DataFrame(winners)[['iteration', 'return_pct']].set_index('iteration')
+        df_chart = pd.DataFrame(winners)
+        if 'iteration' in df_chart.columns:
+            chart_data = df_chart[['iteration', 'return_pct']].set_index('iteration')
+        else:
+            chart_data = df_chart[['return_pct']].reset_index()
+            chart_data.columns = ['iteration', 'return_pct']
+            chart_data = chart_data.set_index('iteration')
         st.line_chart(chart_data)
 
 # --- Winners tab ---
