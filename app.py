@@ -11,7 +11,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from engine import RULE_NAMES, engine_loop
+from engine import RULE_NAMES, RULE_PARAM_TYPES, PERIODS, engine_loop
 
 st.set_page_config(
     page_title="Strategy Engine",
@@ -63,6 +63,61 @@ RULE_DESCRIPTIONS = [
     "Price vs Bollinger Bands (std dev bands). Breakout outside bands = signal.",
 ]
 
+def render_rule_param_inputs(rule_idx):
+    """Render the right parameter inputs for a rule. Returns the param value."""
+    ptype = RULE_PARAM_TYPES[rule_idx]
+    k = f"mp_{rule_idx}"
+
+    if ptype == 'two_periods':
+        c1, c2 = st.columns(2)
+        p1 = c1.selectbox("Period 1", PERIODS, index=4, key=f"{k}_p1",
+                           help="Shorter period — faster signal line.")
+        p2 = c2.selectbox("Period 2", PERIODS, index=8, key=f"{k}_p2",
+                           help="Longer period — slower signal line. Should be >= Period 1.")
+        return (p1, p2)
+
+    elif ptype == 'rsi_threshold':
+        c1, c2 = st.columns(2)
+        p1 = c1.selectbox("RSI Period", PERIODS, index=4, key=f"{k}_p1",
+                           help="Lookback bars for RSI calculation. 14 is standard.")
+        p2 = c2.slider("Threshold", 0, 100, 50, key=f"{k}_p2",
+                        help="RSI below this = bullish signal. Above = bearish.")
+        return (p1, p2)
+
+    elif ptype == 'cci_threshold':
+        c1, c2 = st.columns(2)
+        p1 = c1.selectbox("CCI Period", PERIODS, index=4, key=f"{k}_p1",
+                           help="Lookback bars for CCI. 20 is standard.")
+        p2 = c2.slider("Threshold", -120, 120, 0, key=f"{k}_p2",
+                        help="CCI below this = bullish signal. Above = bearish.")
+        return (p1, p2)
+
+    elif ptype == 'rsi_dual_band':
+        p1 = st.selectbox("RSI Period", PERIODS, index=4, key=f"{k}_p1",
+                           help="Lookback bars for RSI.")
+        c1, c2 = st.columns(2)
+        upper = c1.slider("Overbought", 50, 100, 70, key=f"{k}_upper",
+                           help="RSI above this = sell signal (overbought).")
+        lower = c2.slider("Oversold", 0, 50, 30, key=f"{k}_lower",
+                           help="RSI below this = buy signal (oversold).")
+        return (p1, upper, lower)
+
+    elif ptype == 'cci_dual_band':
+        p1 = st.selectbox("CCI Period", PERIODS, index=4, key=f"{k}_p1",
+                           help="Lookback bars for CCI.")
+        c1, c2 = st.columns(2)
+        upper = c1.slider("Overbought", 0, 200, 100, key=f"{k}_upper",
+                           help="CCI above this = sell signal.")
+        lower = c2.slider("Oversold", -200, 0, -100, key=f"{k}_lower",
+                           help="CCI below this = buy signal.")
+        return (p1, upper, lower)
+
+    else:  # single_period
+        p = st.selectbox("Period", PERIODS, index=4, key=f"{k}_p",
+                          help="Lookback window for this channel/band indicator.")
+        return p
+
+
 # ---------- sidebar ----------
 with st.sidebar:
     st.title("Strategy Engine")
@@ -85,6 +140,28 @@ with st.sidebar:
             help=RULE_DESCRIPTIONS[i],
         ):
             selected_rules.append(i)
+
+    st.divider()
+    auto_train = st.toggle(
+        "Auto-train rule parameters",
+        value=True,
+        key='auto_train',
+        help=(
+            "ON: brute-force searches every parameter combination on your training data "
+            "to find the best settings per rule (slow but optimal). "
+            "OFF: you set the parameters manually below — starts instantly."
+        ),
+    )
+
+    manual_params = {}
+    if not auto_train:
+        if not selected_rules:
+            st.caption("Select at least one rule above to configure its parameters.")
+        else:
+            st.caption("Set parameters for each selected rule:")
+            for idx in selected_rules:
+                with st.expander(f"R{idx+1} — {RULE_NAMES[idx]}"):
+                    manual_params[idx] = render_rule_param_inputs(idx)
 
     st.divider()
     st.subheader("Data Split")
@@ -244,6 +321,7 @@ if start_btn:
             'winner_min_return': float(winner_min_return),
             'winner_min_sharpe': float(winner_min_sharpe),
             'winner_max_dd': float(winner_max_dd),
+            'manual_params': manual_params if not auto_train else None,
         }
 
         stop_event = threading.Event()

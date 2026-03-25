@@ -44,12 +44,22 @@ PERIODS = [1, 3, 5, 7, 11, 15, 19, 23, 27, 35, 41, 50, 61]
 RSI_LIMITS = list(range(0, 101, 5))
 CCI_LIMITS = list(range(-120, 121, 20))
 
-TYPE1 = {0, 1, 2, 3, 4, 5, 6, 7, 8}
+TYPE1    = {0, 1, 2, 3, 4, 5, 6, 7, 8}
 TYPE2_RSI = {9}
 TYPE2_CCI = {10}
 TYPE3_RSI = {11}
 TYPE3_CCI = {12}
-TYPE4 = {13, 14, 15}
+TYPE4    = {13, 14, 15}
+
+# Exported so the UI can build the right inputs per rule type
+RULE_PARAM_TYPES = {
+    **{i: 'two_periods'   for i in TYPE1},
+    9:  'rsi_threshold',
+    10: 'cci_threshold',
+    11: 'rsi_dual_band',
+    12: 'cci_dual_band',
+    **{i: 'single_period' for i in TYPE4},
+}
 
 
 def train_selected_rules(df, selected_indices, state):
@@ -223,13 +233,18 @@ def engine_loop(config, state, stop_event):
     state['phase'] = 'training'
     state['winners'] = state.get('winners', [])
 
-    # --- Phase 1: train rule params once ---
-    try:
-        rule_params = train_selected_rules(train_data, selected, state)
-    except Exception as e:
-        state['status'] = f'Rule training failed: {e}'
-        state['phase'] = 'stopped'
-        return
+    # --- Phase 1: rule params (manual or trained) ---
+    manual = config.get('manual_params')
+    if manual:
+        rule_params = manual
+        state['status'] = 'Using manual rule parameters.'
+    else:
+        try:
+            rule_params = train_selected_rules(train_data, selected, state)
+        except Exception as e:
+            state['status'] = f'Rule training failed: {e}'
+            state['phase'] = 'stopped'
+            return
 
     state['status'] = 'Building features...'
     try:
