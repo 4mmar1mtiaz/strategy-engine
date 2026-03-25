@@ -491,53 +491,276 @@ with tab_rules:
 
 # --- Guide tab ---
 with tab_guide:
-    st.subheader("How it works")
-    st.markdown("""
-    **Step 1 — Upload your data**
-    Upload any CSV with `Open`, `High`, `Low`, `Close` columns. The engine splits it into
-    a training set and a hold-out test set based on your configured split %.
 
-    **Step 2 — Rule training (once per session)**
-    For each selected indicator rule, the engine brute-forces through hundreds of parameter
-    combinations (e.g. MA periods, RSI thresholds) and picks the best-performing one on the
-    training data. This is the slow part — expect a few minutes depending on how many rules you selected.
+    # ── Quick reference ──────────────────────────────────────────────
+    st.subheader("Quick reference")
+    st.info(
+        "**Lost? Start here.**  \n"
+        "1. Upload CSV → 2. Pick rules → 3. Set winner criteria → 4. Press Start → 5. Wait for winners  \n"
+        "Everything else is optional tuning."
+    )
 
-    **Step 3 — GA loop (runs forever)**
-    Once rules are trained, the Genetic Algorithm loops continuously. Each iteration:
-    - Randomly initialises a population of weight combinations
-    - Evolves them over N generations, selecting and breeding the best performers
-    - The fitness function is the GAMSSR ratio — a Sharpe-like metric that penalises losses hard
+    qc1, qc2, qc3 = st.columns(3)
+    qc1.success(
+        "**First time setup**  \n"
+        "- All rules ON  \n"
+        "- Auto-train ON  \n"
+        "- Split 80 / 20  \n"
+        "- GA: 200 gen, pop 10  \n"
+        "- MC: 50 sims  \n"
+        "- Winner: 10% return, 1.0 SR"
+    )
+    qc2.warning(
+        "**Want more winners?**  \n"
+        "Lower the winner thresholds:  \n"
+        "- Return % → 5%  \n"
+        "- Sharpe → 0.5  \n"
+        "- Max DD → 20%  \n"
+        "- MC pass rate → 55%"
+    )
+    qc3.error(
+        "**Want fewer but stronger?**  \n"
+        "Raise winner thresholds:  \n"
+        "- Return % → 20%+  \n"
+        "- Sharpe → 2.0+  \n"
+        "- Max DD → 5%  \n"
+        "- MC pass rate → 75%+"
+    )
 
-    **Step 4 — Pre-MC filter**
-    The winning weights are applied to the test set. If the strategy doesn't meet your
-    minimum return % and Sharpe ratio, it's discarded and the loop continues.
+    st.divider()
 
-    **Step 5 — Monte Carlo validation**
-    For strategies that pass the pre-MC filter, Monte Carlo runs N simulations.
-    Each sim adds random price noise to the test data and re-runs the strategy.
+    # ── Full pipeline ─────────────────────────────────────────────────
+    st.subheader("The full pipeline — what actually runs")
 
-    **Step 6 — Winner criteria**
-    After MC, the strategy must also meet your Winner Criteria thresholds:
-    min return %, min Sharpe, max drawdown %, and min MC pass rate.
-    All four must be satisfied — if any one fails, the strategy is discarded.
+    with st.expander("Step 1 — Upload your data", expanded=False):
+        st.markdown("""
+**What:** Any CSV with `Open`, `High`, `Low`, `Close` columns.
 
-    **Step 6 — Winners**
-    Winning strategies are shown in the Winners tab and appended to `winners.csv`.
-    Each winner includes its weights, rules used, return, Sharpe, drawdown, and MC pass rate.
-    """)
+**What happens to it:**
+- Split into **training set** (used to find indicator params + GA weights) and **test set** (hold-out — never touched during optimisation)
+- Training % is set by the slider. Default 80% train / 20% test.
 
-    st.subheader("Indicator rules")
+**Key point:** The test set is the only honest measure of performance. If a strategy looks good there, it wasn't just fitted to known data.
+
+**CSV format:**
+```
+Open,High,Low,Close
+1.2345,1.2360,1.2330,1.2350
+...
+```
+Timeframe doesn't matter — 1min, 5min, daily all work. The engine adapts.
+        """)
+
+    with st.expander("Step 2 — Rule parameter training (slow, runs once)", expanded=False):
+        st.markdown("""
+**What:** For each selected indicator rule, the engine tries every combination of parameters on your training data and picks the one with the highest return.
+
+**Example for R1 (MA × MA):**
+```
+Try period pairs: (1,1), (1,3), (1,5) ... (50,61) — 91 combinations
+→ Pick the pair that produced the best return on training data
+```
+
+**Why it's slow:** Some rules have hundreds of combinations. 16 rules × hundreds of combos = a few minutes.
+
+**Skip it:** Toggle off "Auto-train rule parameters" in the sidebar and set them manually — starts instantly.
+
+**After training:** Check the **Rule Params** tab to see what the engine found. You can copy those values into manual mode for future runs on similar data.
+        """)
+
+    with st.expander("Step 3 — Genetic Algorithm loop (runs forever)", expanded=False):
+        st.markdown("""
+**What:** The GA finds the best *combination of weights* — how much to trust each rule's signal.
+
+**Each iteration:**
+1. Randomly creates a population of weight sets
+2. Calculates fitness for each (GAMSSR ratio — explained below)
+3. Keeps the best, breeds them together, mutates slightly
+4. Repeats for N generations
+5. Returns the best weight set found
+
+**GAMSSR fitness function:**
+`mean(returns) / std(returns) / sum(all_losses)`
+= Sharpe-like, but **heavily penalises losses**. A strategy that makes money smoothly scores much higher than one that makes the same return with big drawdowns.
+
+**Key point:** Rule params are **fixed**. The GA only moves weights. You get a different set of weights every iteration because the GA starts from a random population each time.
+
+**Tuning:**
+- More generations → deeper search, slower
+- Bigger population → more diversity, slower per generation
+- More parents mating → more elitism, less exploration
+        """)
+
+    with st.expander("Step 4 — Pre-MC filter (fast gate)", expanded=False):
+        st.markdown("""
+**What:** A quick check before running the expensive Monte Carlo. If the strategy doesn't clear these, it's thrown away immediately.
+
+**Two checks:**
+- Return % on test set ≥ your minimum
+- Sharpe ratio on test set ≥ your minimum
+
+**Why have this?** Monte Carlo takes time. Without this gate, you'd run MC on every mediocre strategy. Set these just above "obviously bad" — they're not your real winner criteria, just a speed filter.
+
+**Recommended starting values:** Return 5%, Sharpe 0.5
+        """)
+
+    with st.expander("Step 5 — Monte Carlo stress test", expanded=False):
+        st.markdown("""
+**What:** Runs the strategy N times on slightly different versions of your data to see if it still works when the data isn't perfect.
+
+**How each simulation works:**
+1. Add tiny random noise to every OHLC bar (log-normal, controlled by noise std)
+2. Re-run the strategy on the noisy data
+3. Record whether it was profitable
+
+**Pass rate** = % of simulations that were profitable
+
+**Why this matters:** A strategy that only works on the exact data it was tested on is probably overfit. If it still makes money when prices are nudged slightly, it's more likely to work on future data.
+
+**Noise std guide:**
+- `0.0001` = ~0.01% per bar — very subtle, tests minor data differences
+- `0.001` = ~0.1% per bar — moderate, simulates slippage / bid-ask spread
+- `0.005` = ~0.5% per bar — aggressive stress test
+
+**Sims guide:**
+- 50 sims = fast, rough confidence
+- 100 sims = good balance
+- 200+ sims = high confidence, slower
+        """)
+
+    with st.expander("Step 6 — Winner criteria (your real standards)", expanded=False):
+        st.markdown("""
+**What:** The final gate. A strategy must pass ALL FOUR to be saved.
+
+| Criterion | What it means | Tune based on |
+|---|---|---|
+| Min return % | Total profit on test set | Length of your data |
+| Min Sharpe | Return vs volatility | How smooth you want it |
+| Max drawdown % | Biggest loss from peak | Your risk tolerance |
+| Min MC pass rate % | Robustness across noisy scenarios | How confident you want to be |
+
+**All four must pass.** The status bar tells you exactly which one failed — e.g. `"Failed: return 3.2% < 10%"` — so you know what to adjust.
+
+**Tune return % to your data length:**
+- 1 month of 5-min data → target 5–15%
+- 3 months → target 15–30%
+- 1 year → target 50–100%+
+        """)
+
+    st.divider()
+
+    # ── Indicator rules ───────────────────────────────────────────────
+    st.subheader("Indicator rules — what each one does")
+
+    RULE_TAGS = [
+        "trend", "trend", "trend", "trend", "trend", "trend",
+        "momentum", "trend", "trend",
+        "momentum", "momentum", "momentum", "momentum",
+        "volatility", "volatility", "volatility",
+    ]
+    TAG_COLORS = {"trend": "🔵", "momentum": "🟠", "volatility": "🟣"}
+
+    tag_legend_col1, tag_legend_col2, tag_legend_col3 = st.columns(3)
+    tag_legend_col1.caption("🔵 Trend — follow direction")
+    tag_legend_col2.caption("🟠 Momentum — overbought/oversold")
+    tag_legend_col3.caption("🟣 Volatility — channel breakouts")
+
     for i, (name, desc) in enumerate(zip(RULE_NAMES, RULE_DESCRIPTIONS)):
-        st.markdown(f"**R{i+1} — {name}:** {desc}")
+        tag = RULE_TAGS[i]
+        icon = TAG_COLORS[tag]
+        with st.expander(f"{icon} R{i+1} — {name}"):
+            st.markdown(f"**What it does:** {desc}")
+            ptype = RULE_PARAM_TYPES[i]
+            if ptype == 'two_periods':
+                st.caption("Parameters: Period 1 (fast line), Period 2 (slow line). Signal fires when they cross.")
+            elif ptype in ('rsi_threshold', 'cci_threshold'):
+                st.caption("Parameters: Indicator period, Threshold level. Signal fires when indicator crosses threshold.")
+            elif ptype in ('rsi_dual_band', 'cci_dual_band'):
+                st.caption("Parameters: Period, Overbought level (sell signal), Oversold level (buy signal).")
+            else:
+                st.caption("Parameters: Single period for the channel/band width.")
 
-    st.subheader("Tips")
-    st.markdown("""
-    - **Start with all rules selected** to let the GA pick the best combination via weights
-    - **Tighten the pre-MC filters** (raise min return / Sharpe) to only MC-test promising strategies — saves time
-    - **Raise MC pass threshold to 75-80%** for higher confidence winners
-    - **Lower GA generations to 100** if you want faster iterations; raise to 500 for deeper search
-    - The engine keeps running until you press Stop — winners accumulate in the table and CSV
-    """)
+    st.divider()
+
+    # ── Settings cheat sheet ──────────────────────────────────────────
+    st.subheader("Settings cheat sheet")
+
+    with st.expander("Speed vs quality tradeoffs", expanded=False):
+        st.markdown("""
+| Setting | Faster / more iterations | Slower / deeper search |
+|---|---|---|
+| GA generations | 50–100 | 300–500 |
+| GA population | 4–6 | 16–20 |
+| MC simulations | 20–30 | 150–200 |
+| Rules selected | 4–6 rules | All 16 |
+| Auto-train | OFF (manual params) | ON |
+
+**Tip:** Start fast to confirm the setup works, then slow down for the overnight run.
+        """)
+
+    with st.expander("Nothing is being saved as a winner — what to check", expanded=False):
+        st.markdown("""
+Watch the **status bar** — it tells you exactly what failed.
+
+**Common causes:**
+
+`Failed: return 3.2% < 10%`
+→ Lower "Min return %" in Winner Criteria, or use more data
+
+`Failed: Sharpe 0.4 < 1.0`
+→ Lower "Min Sharpe" — your data may have inherently noisy returns
+
+`Failed: DD 15% > 10%`
+→ Raise "Max drawdown %" — the strategy is volatile but still profitable
+
+`Failed: MC 45% < 60%`
+→ Lower "Min MC pass rate" or reduce noise std — strategy may be slightly sensitive to noise
+
+`No iterations completing at all`
+→ Pre-MC filters are too tight. Lower "Min return %" and "Min Sharpe" in the Pre-MC Filters section.
+        """)
+
+    with st.expander("Auto-train vs manual parameters — when to use each", expanded=False):
+        st.markdown("""
+**Use Auto-train when:**
+- First time running on a new dataset
+- You want the system to figure out what works
+- You have time (coffee run)
+
+**Use Manual when:**
+- You've already run auto-train and noted the params from the Rule Params tab
+- You want to test a specific hypothesis ("what if RSI uses 14 / 70 / 30?")
+- You want to start immediately without waiting
+
+**Pro workflow:**
+1. Run auto-train once → check Rule Params tab → note the values
+2. Next session: switch to manual, enter those values → skip straight to GA
+        """)
+
+    with st.expander("Understanding the metrics", expanded=False):
+        st.markdown("""
+**Return %** — total profit over the test period as a percentage. Simple.
+
+**Sharpe ratio** — return divided by volatility, annualised. Tells you if the returns were smooth or chaotic.
+- Below 0.5 → bad
+- 0.5–1.0 → acceptable
+- 1.0–2.0 → good
+- 2.0–5.0 → strong
+- 5.0+ → exceptional (verify it's not overfit)
+
+**Max drawdown %** — the biggest drop from a peak before recovering. If your strategy hit +20% then fell to +10% before recovering, that's a -10% drawdown.
+- Below 5% → very tight
+- 5–15% → normal
+- Above 20% → risky
+
+**MC pass rate %** — out of N noisy simulations, how many were profitable.
+- Below 55% → basically random
+- 60–70% → decent robustness
+- 75%+ → confident it's not a fluke
+        """)
+
+    st.divider()
+    st.caption("Tip: the status bar at the top always shows exactly what the engine is doing and why strategies pass or fail.")
 
 # ---------- auto-refresh while running ----------
 if st.session_state.running:
