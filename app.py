@@ -560,6 +560,48 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown(f"""
+<style>
+.save-banner {{
+    background: rgba(0,212,170,0.07);
+    border: 1px solid rgba(0,212,170,0.25);
+    border-radius: 10px;
+    padding: 16px 22px;
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+}}
+.save-banner .icon {{ font-size: 1.5rem; }}
+.save-banner .text {{ flex: 1; }}
+.save-banner .text strong {{ color: #00d4aa; font-size: 0.95rem; }}
+.save-banner .text p {{ margin: 4px 0 0 0; font-size: 0.82rem; color: #a0aec0; line-height: 1.5; }}
+.save-banner .code-box {{
+    background: rgba(0,0,0,0.3);
+    border: 1px solid rgba(0,212,170,0.3);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-family: monospace;
+    font-size: 1rem;
+    color: #00d4aa;
+    letter-spacing: 0.05em;
+}}
+</style>
+<div class="save-banner">
+  <div class="icon">💾</div>
+  <div class="text">
+    <strong>Your progress is saved automatically</strong>
+    <p>
+      Your save code is <b style="color:#00d4aa; font-family:monospace">{user_id}</b> —
+      bookmark this page or copy the code and share it with no one.
+      Every strategy you find is saved against this code and will be here when you come back.<br>
+      <span style="color:#718096">Note: saved data may reset if the app is updated or redeployed.</span>
+    </p>
+  </div>
+</div>
+""", unsafe_allow_html=True)
+
 st.markdown("""
 <style>
 .how-strip {
@@ -1061,6 +1103,28 @@ Watch the **status bar** — it tells you exactly what failed.
 
     st.divider()
     st.caption("Tip: the status bar at the top always shows exactly what the engine is doing and why strategies pass or fail.")
+
+# ---------- footer ----------
+st.markdown("""
+<style>
+.footer {
+    margin-top: 60px;
+    padding: 24px 0 12px 0;
+    border-top: 1px solid #2d3748;
+    text-align: center;
+    color: #4a5568;
+    font-size: 0.82rem;
+}
+.footer span { color: #718096; }
+</style>
+<div class="footer">
+    Created by <strong style="color:#a0aec0">Ammar</strong>
+    &nbsp;·&nbsp;
+    <span>Built on University of Sydney research</span>
+    &nbsp;·&nbsp;
+    <span>Free forever</span>
+</div>
+""", unsafe_allow_html=True)
 
 # ---------- auto-refresh while running ----------
 if st.session_state.running:
