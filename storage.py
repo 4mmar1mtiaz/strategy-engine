@@ -16,15 +16,18 @@ def save_winner(user_id: str, winner: dict):
 
 
 def load_winners(user_id: str) -> list:
-    result = (
-        _client()
-        .table("winners")
-        .select("data")
-        .eq("user_id", user_id)
-        .order("saved_at")
-        .execute()
-    )
-    return [row["data"] for row in result.data]
+    try:
+        result = (
+            _client()
+            .table("winners")
+            .select("data")
+            .eq("user_id", user_id)
+            .execute()
+        )
+        return [row["data"] for row in result.data]
+    except Exception as e:
+        st.warning(f"Could not load saved winners: {e}")
+        return []
 
 
 def delete_winners(user_id: str):
